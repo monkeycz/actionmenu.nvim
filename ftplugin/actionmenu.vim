@@ -32,7 +32,13 @@ endfunction
 
 function! actionmenu#on_insert_leave()
   if type(s:selected_item) == type({})
-    call actionmenu#callback(s:selected_item['user_data'], g:actionmenu#items[s:selected_item['user_data']])
+    let l:index = s:selected_item['user_data']
+    " Don't trigger callback for separators (user_data = -1)
+    if l:index >= 0
+      call actionmenu#callback(l:index, g:actionmenu#items[l:index])
+    else
+      call actionmenu#callback(-1, 0)
+    endif
     let s:selected_item = 0   " Clear the selected item once selected
   else
     call actionmenu#callback(-1, 0)
@@ -42,6 +48,16 @@ endfunction
 function! actionmenu#pum_item_to_action_item(item, index) abort
   if type(a:item) == type("")
     return { 'word': a:item, 'user_data': a:index }
+  elseif get(a:item, 'separator', v:false)
+    " This is a separator - make it non-selectable
+    let l:text = get(a:item, 'text', repeat('─', 30))
+    return {
+      \ 'word': l:text,
+      \ 'abbr': l:text,
+      \ 'user_data': -1,
+      \ 'dup': 1,
+      \ 'empty': 1
+      \ }
   else
     return { 'word': a:item['word'], 'user_data': a:index }
   endif

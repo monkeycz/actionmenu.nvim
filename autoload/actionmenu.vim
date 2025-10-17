@@ -114,6 +114,21 @@ function! actionmenu#example3() abort
   call actionmenu#open(['First', 'Second', 'Third'], "actionmenu#example_callback")
 endfunction
 
+function! actionmenu#example4() abort
+  " Example with separators
+  let items = [
+  \ 'First',
+  \ 'Second',
+  \ { 'separator': v:true },
+  \ 'Third',
+  \ 'Fourth',
+  \ { 'separator': v:true, 'text': '─── More Options ───' },
+  \ 'Fifth',
+  \ 'Sixth'
+  \ ]
+  call actionmenu#open(items, function('actionmenu#example_callback'))
+endfunction
+
 function! actionmenu#example_callback(index, item) abort
   if type(a:item) == type("")
     echo "Selected ". a:item . " position " . a:index
