@@ -129,6 +129,21 @@ function! actionmenu#example4() abort
   call actionmenu#open(items, function('actionmenu#example_callback'))
 endfunction
 
+function! actionmenu#example5() abort
+  " Example with shortcuts
+  let items = [
+  \ { 'word': 'First', 'shortcut': 'f' },
+  \ { 'word': 'Second', 'shortcut': 's' },
+  \ { 'separator': v:true },
+  \ { 'word': 'Third', 'shortcut': 't' },
+  \ { 'word': 'Fourth', 'shortcut': '4' },
+  \ { 'separator': v:true, 'text': '─── More Options ───' },
+  \ { 'word': 'Fifth' },
+  \ { 'word': 'Sixth', 'shortcut': '6' }
+  \ ]
+  call actionmenu#open(items, function('actionmenu#example_callback'))
+endfunction
+
 function! actionmenu#example_callback(index, item) abort
   if type(a:item) == type("")
     echo "Selected ". a:item . " position " . a:index

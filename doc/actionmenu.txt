@@ -51,6 +51,41 @@ call actionmenu#open(
   \ 'mycallback'
   \ )
 
+------------------------------------------------------------------------------
+4. Example with separators
+
+let l:items = [
+  \ 'First',
+  \ 'Second',
+  \ { 'separator': v:true },
+  \ 'Third',
+  \ { 'separator': v:true, 'text': '─── More Options ───' },
+  \ 'Fourth'
+  \ ]
+
+call actionmenu#open(l:items, function('mycallback'))
+
+Separators can be used to group menu items visually. They are not selectable
+and do not trigger the callback.
+
+------------------------------------------------------------------------------
+5. Example with shortcuts                            *actionmenu-shortcuts*
+
+let l:items = [
+  \ { 'word': 'First', 'shortcut': 'f' },
+  \ { 'word': 'Second', 'shortcut': 's' },
+  \ { 'word': 'Third', 'shortcut': 't' }
+  \ ]
+
+call actionmenu#open(l:items, function('mycallback'))
+
+Shortcuts allow users to quickly select menu items by pressing a single key
+when the menu is open. The shortcut key is displayed next to the item name
+in the format "Item Name [key]".
+
+Note: Shortcuts are only active when the menu is displayed and are
+automatically cleared when the menu closes.
+
 ==============================================================================
 LICENSE                                                     *actionmenu-license*
 

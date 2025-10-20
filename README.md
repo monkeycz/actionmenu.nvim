@@ -77,6 +77,8 @@ nnoremap <silent> <Leader>s :call ActionMenuCodeActions()<CR>
 
 ## More examples
 
+### Using complete-items
+
 Below is an example using vim's `complete-items` allowing you to pass in more complex data
 
 ```vim
@@ -100,7 +102,46 @@ func! Callback(index, item)
 endfunc
 ```
 
-You can open the actionmenu with a custom icon (i've recently been using [nerdfonts](http://nerdfonts.com/) for this)
+### Using separators
+
+You can add visual separators between groups of menu items:
+
+```vim
+func! Demo()
+  let l:items = [
+    \ 'First',
+    \ 'Second',
+    \ { 'separator': v:true },
+    \ 'Third',
+    \ { 'separator': v:true, 'text': '─── More Options ───' },
+    \ 'Fourth'
+    \ ]
+
+  call actionmenu#open(l:items, 'Callback')
+endfunc
+```
+
+### Using shortcuts
+
+You can assign keyboard shortcuts to menu items that are only active when the menu is open:
+
+```vim
+func! Demo()
+  let l:items = [
+    \ { 'word': 'First', 'shortcut': 'f' },
+    \ { 'word': 'Second', 'shortcut': 's' },
+    \ { 'word': 'Third', 'shortcut': 't' }
+    \ ]
+
+  call actionmenu#open(l:items, 'Callback')
+endfunc
+```
+
+The shortcut key will be displayed next to each item (e.g., "First [f]"). Users can press the shortcut key to immediately select that item without navigating through the menu.
+
+### Custom icon
+
+You can open the actionmenu with a custom icon (i've recently been using [nerdfonts](http://nerdfonts.com/) for this):
 
 ```vim
 func! Demo()

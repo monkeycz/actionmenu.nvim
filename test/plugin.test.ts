@@ -215,4 +215,89 @@ describe("actionmenu", () => {
         }));
     });
   });
+
+  describe("shortcuts", () => {
+    it("displays shortcut hints in menu items", () =>
+      withVim(async nvim => {
+        const items = [
+          {word: "First", shortcut: "f"},
+          {word: "Second", shortcut: "s"}
+        ];
+
+        await openActionMenu(nvim, items);
+
+        // Get the completion items
+        const completionItems = await nvim.call("complete_info", [["items"]]);
+        const displayedItems = completionItems.items;
+
+        // Check that shortcuts are displayed in the abbreviation
+        assert.equal(displayedItems[0].abbr, "First [f]");
+        assert.equal(displayedItems[1].abbr, "Second [s]");
+      }));
+
+    it("selects item when shortcut key is pressed", () =>
+      withVim(async nvim => {
+        const items = [
+          {word: "First", shortcut: "f"},
+          {word: "Second", shortcut: "s"},
+          {word: "Third", shortcut: "t"}
+        ];
+
+        await openActionMenu(nvim, items);
+
+        // Press the shortcut for "Second"
+        await nvim.call("feedkeys", ["s"]);
+
+        const {index, item} = await callbackResult(nvim);
+
+        assert.equal(index, 1);
+        assert.equal(isComplexItem(item), true);
+        if (isComplexItem(item)) {
+          assert.equal(item.word, "Second");
+        }
+      }));
+
+    it("works with mixed shortcut and non-shortcut items", () =>
+      withVim(async nvim => {
+        const items = [
+          {word: "First", shortcut: "f"},
+          {word: "Second"},  // No shortcut
+          {word: "Third", shortcut: "t"}
+        ];
+
+        await openActionMenu(nvim, items);
+
+        // Press the shortcut for "Third"
+        await nvim.call("feedkeys", ["t"]);
+
+        const {index, item} = await callbackResult(nvim);
+
+        assert.equal(index, 2);
+        assert.equal(isComplexItem(item), true);
+        if (isComplexItem(item)) {
+          assert.equal(item.word, "Third");
+        }
+      }));
+
+    it("shortcuts do not conflict with normal menu navigation", () =>
+      withVim(async nvim => {
+        const items = [
+          {word: "First", shortcut: "f"},
+          {word: "Second", shortcut: "s"}
+        ];
+
+        await openActionMenu(nvim, items);
+
+        // Navigate down first, then use Enter to select
+        await nvim.call("feedkeys", [`j${ENTER}`]);
+
+        const {index, item} = await callbackResult(nvim);
+
+        assert.equal(index, 1);
+        assert.equal(isComplexItem(item), true);
+        if (isComplexItem(item)) {
+          assert.equal(item.word, "Second");
+        }
+      }));
+  });
 });
