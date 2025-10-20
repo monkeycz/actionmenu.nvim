@@ -8,10 +8,10 @@ if get(s:, 'loaded')
   inoremap <nowait><buffer> <expr> <CR> actionmenu#select_item()
   imap <nowait><buffer> <C-y> <CR>
   imap <nowait><buffer> <C-e> <esc>
-  inoremap <nowait><buffer> <Up> <C-p>
-  inoremap <nowait><buffer> <Down> <C-n>
-  inoremap <nowait><buffer> k <C-p>
-  inoremap <nowait><buffer> j <C-n>
+  inoremap <nowait><buffer> <expr> <Up> actionmenu#navigate_up()
+  inoremap <nowait><buffer> <expr> <Down> actionmenu#navigate_down()
+  inoremap <nowait><buffer> <expr> k actionmenu#navigate_up()
+  inoremap <nowait><buffer> <expr> j actionmenu#navigate_down()
 
   " Reset autocmd for InsertLeave
   augroup ActionMenuEvents
@@ -143,6 +143,67 @@ function! actionmenu#trigger_shortcut_callback()
   endif
 endfunction
 
+function! actionmenu#navigate_down()
+  " Calculate how many steps to skip separators
+  let l:info = complete_info(['selected'])
+  let l:current = l:info.selected == -1 ? -1 : l:info.selected
+  let l:next = l:current + 1
+  let l:max = len(g:actionmenu#items) - 1
+
+  " Find next non-separator item
+  let l:steps = 0
+  while l:next <= l:max
+    let l:item = g:actionmenu#items[l:next]
+    let l:is_separator = type(l:item) == type({}) && get(l:item, 'separator', v:false)
+
+    if !l:is_separator
+      " Found a non-separator, stop here
+      break
+    endif
+
+    " This is a separator, skip it
+    let l:next += 1
+    let l:steps += 1
+  endwhile
+
+  " Return the appropriate number of <C-n> keys
+  if l:steps == 0
+    return "\<C-n>"
+  else
+    return repeat("\<C-n>", l:steps + 1)
+  endif
+endfunction
+
+function! actionmenu#navigate_up()
+  " Calculate how many steps to skip separators
+  let l:info = complete_info(['selected'])
+  let l:current = l:info.selected == -1 ? 0 : l:info.selected
+  let l:prev = l:current - 1
+
+  " Find previous non-separator item
+  let l:steps = 0
+  while l:prev >= 0
+    let l:item = g:actionmenu#items[l:prev]
+    let l:is_separator = type(l:item) == type({}) && get(l:item, 'separator', v:false)
+
+    if !l:is_separator
+      " Found a non-separator, stop here
+      break
+    endif
+
+    " This is a separator, skip it
+    let l:prev -= 1
+    let l:steps += 1
+  endwhile
+
+  " Return the appropriate number of <C-p> keys
+  if l:steps == 0
+    return "\<C-p>"
+  else
+    return repeat("\<C-p>", l:steps + 1)
+  endif
+endfunction
+
 function! actionmenu#pum_item_to_action_item(item, index, ...) abort
   let l:max_len = get(a:, 1, 0)
 
@@ -191,10 +252,10 @@ imapclear <buffer>
 inoremap <nowait><buffer> <expr> <CR> actionmenu#select_item()
 imap <nowait><buffer> <C-y> <CR>
 imap <nowait><buffer> <C-e> <esc>
-inoremap <nowait><buffer> <Up> <C-p>
-inoremap <nowait><buffer> <Down> <C-n>
-inoremap <nowait><buffer> k <C-p>
-inoremap <nowait><buffer> j <C-n>
+inoremap <nowait><buffer> <expr> <Up> actionmenu#navigate_up()
+inoremap <nowait><buffer> <expr> <Down> actionmenu#navigate_down()
+inoremap <nowait><buffer> <expr> k actionmenu#navigate_up()
+inoremap <nowait><buffer> <expr> j actionmenu#navigate_down()
 
 " Events
 augroup ActionMenuEvents
