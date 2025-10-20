@@ -1,5 +1,25 @@
-" Only load once (subsequent times, just open pum)
+" Only load once (subsequent times, setup shortcuts and open pum)
 if get(s:, 'loaded')
+  " Clear and reset mappings for subsequent menu opens
+  mapclear <buffer>
+  imapclear <buffer>
+
+  " Reset standard navigation mappings
+  inoremap <nowait><buffer> <expr> <CR> actionmenu#select_item()
+  imap <nowait><buffer> <C-y> <CR>
+  imap <nowait><buffer> <C-e> <esc>
+  inoremap <nowait><buffer> <Up> <C-p>
+  inoremap <nowait><buffer> <Down> <C-n>
+  inoremap <nowait><buffer> k <C-p>
+  inoremap <nowait><buffer> j <C-n>
+
+  " Reset autocmd for InsertLeave
+  augroup ActionMenuEvents
+    autocmd! * <buffer>
+    autocmd InsertLeave <buffer> call actionmenu#on_insert_leave()
+  augroup END
+
+  call actionmenu#setup_shortcuts()
   call actionmenu#open_pum()
   finish
 endif
@@ -32,8 +52,8 @@ function! actionmenu#close_pum()
 endfunction
 
 function! actionmenu#on_insert_leave()
-  " Clear shortcuts when leaving insert mode
-  call actionmenu#clear_shortcuts()
+  " Don't clear shortcuts here - they'll be cleared when menu opens again
+  " This avoids issues with script-local variable state
 
   if type(s:selected_item) == type({})
     let l:index = s:selected_item['user_data']
@@ -74,13 +94,17 @@ endfunction
 
 function! actionmenu#clear_shortcuts()
   " Remove all shortcut mappings
-  for l:shortcut in s:shortcut_mappings
+  " Use a copy to avoid issues if the list is modified during iteration
+  let l:shortcuts_to_clear = copy(get(s:, 'shortcut_mappings', []))
+
+  for l:shortcut in l:shortcuts_to_clear
     try
-      execute 'iunmap <buffer> ' . l:shortcut
+      execute 'silent! iunmap <buffer> ' . l:shortcut
     catch
       " Ignore errors if mapping doesn't exist
     endtry
   endfor
+
   let s:shortcut_mappings = []
 endfunction
 
@@ -90,11 +114,32 @@ function! actionmenu#trigger_shortcut(index)
     \ 'user_data': a:index
     \ }
 
-  " Return key sequence to close pum and exit insert mode
+  " Close pum first if visible
   if pumvisible()
-    return "\<C-e>\<Esc>"
-  else
-    return "\<Esc>"
+    call feedkeys("\<C-e>", 'n')
+  endif
+
+  " Use timer to ensure we're out of the mapping context
+  " Then trigger the callback directly
+  call timer_start(0, {-> actionmenu#trigger_shortcut_callback()})
+
+  " Return empty string to not insert anything
+  return ""
+endfunction
+
+function! actionmenu#trigger_shortcut_callback()
+  " Exit insert mode first
+  if mode() ==# 'i'
+    stopinsert
+  endif
+
+  " Trigger the callback directly
+  if type(s:selected_item) == type({})
+    let l:index = s:selected_item['user_data']
+    if l:index >= 0
+      call actionmenu#callback(l:index, g:actionmenu#items[l:index])
+    endif
+    let s:selected_item = 0
   endif
 endfunction
 
@@ -143,7 +188,10 @@ inoremap <nowait><buffer> k <C-p>
 inoremap <nowait><buffer> j <C-n>
 
 " Events
-autocmd InsertLeave <buffer> :call actionmenu#on_insert_leave()
+augroup ActionMenuEvents
+  autocmd! InsertLeave <buffer>
+  autocmd InsertLeave <buffer> :call actionmenu#on_insert_leave()
+augroup END
 
 " pum completion function
 function! actionmenu#complete_func(findstart, base)
