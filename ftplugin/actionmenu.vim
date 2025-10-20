@@ -143,7 +143,9 @@ function! actionmenu#trigger_shortcut_callback()
   endif
 endfunction
 
-function! actionmenu#pum_item_to_action_item(item, index) abort
+function! actionmenu#pum_item_to_action_item(item, index, ...) abort
+  let l:max_len = get(a:, 1, 0)
+
   if type(a:item) == type("")
     return { 'word': a:item, 'user_data': a:index }
   elseif get(a:item, 'separator', v:false)
@@ -163,8 +165,15 @@ function! actionmenu#pum_item_to_action_item(item, index) abort
     let l:abbr = ''
 
     if !empty(l:shortcut)
-      " Format: "item_name [key]"
-      let l:abbr = l:word . ' [' . l:shortcut . ']'
+      " Calculate padding for right alignment
+      let l:word_len = strwidth(l:word)
+      let l:padding = l:max_len - l:word_len
+      if l:padding < 0
+        let l:padding = 0
+      endif
+
+      " Format: "item_name    [key]" (right-aligned)
+      let l:abbr = l:word . repeat(' ', l:padding + 2) . '[' . l:shortcut . ']'
     endif
 
     let l:result = { 'word': l:word, 'user_data': a:index }
@@ -198,9 +207,25 @@ function! actionmenu#complete_func(findstart, base)
   if a:findstart
     return 1
   else
+    " First pass: find the maximum word length
+    let l:max_len = 0
+    for l:item in g:actionmenu#items
+      let l:word = ''
+      if type(l:item) == type("")
+        let l:word = l:item
+      elseif !get(l:item, 'separator', v:false)
+        let l:word = l:item['word']
+      endif
+      let l:len = strwidth(l:word)
+      if l:len > l:max_len
+        let l:max_len = l:len
+      endif
+    endfor
+
+    " Second pass: format items with right-aligned shortcuts
     return map(copy(g:actionmenu#items), {
       \ index, item ->
-      \   actionmenu#pum_item_to_action_item(item, index)
+      \   actionmenu#pum_item_to_action_item(item, index, l:max_len)
       \ }
       \)
   endif
