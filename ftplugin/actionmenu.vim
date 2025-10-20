@@ -65,8 +65,8 @@ function! actionmenu#setup_shortcuts()
     let l:shortcut = get(l:item, 'shortcut', '')
     if !empty(l:shortcut)
       " Create mapping for this shortcut
-      let l:cmd = ':call actionmenu#select_by_index(' . l:index . ')<CR>'
-      execute 'inoremap <nowait><buffer> ' . l:shortcut . ' <C-\><C-o>' . l:cmd
+      " Use <expr> mapping to call function directly
+      execute 'inoremap <nowait><buffer><expr> ' . l:shortcut . ' actionmenu#trigger_shortcut(' . l:index . ')'
       call add(s:shortcut_mappings, l:shortcut)
     endif
   endfor
@@ -84,19 +84,18 @@ function! actionmenu#clear_shortcuts()
   let s:shortcut_mappings = []
 endfunction
 
-function! actionmenu#select_by_index(index)
-  " Close the completion menu
-  if pumvisible()
-    call feedkeys("\<C-e>", 'n')
-  endif
-
+function! actionmenu#trigger_shortcut(index)
   " Set the selected item
   let s:selected_item = {
     \ 'user_data': a:index
     \ }
 
-  " Exit insert mode to trigger the callback
-  call feedkeys("\<Esc>", 'n')
+  " Return key sequence to close pum and exit insert mode
+  if pumvisible()
+    return "\<C-e>\<Esc>"
+  else
+    return "\<Esc>"
+  endif
 endfunction
 
 function! actionmenu#pum_item_to_action_item(item, index) abort
