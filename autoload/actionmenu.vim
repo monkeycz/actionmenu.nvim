@@ -86,7 +86,13 @@ endfunction
 
 function! actionmenu#close()
   if g:actionmenu#win
-    quit
+    " Use nvim_win_close instead of quit to avoid closing vim
+    " when there's only one window
+    try
+      call nvim_win_close(g:actionmenu#win, v:true)
+    catch
+      " If window doesn't exist or already closed, ignore the error
+    endtry
     let g:actionmenu#win = 0
   endif
 endfunction
